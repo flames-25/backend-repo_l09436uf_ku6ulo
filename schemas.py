@@ -1,48 +1,40 @@
 """
-Database Schemas
+Database Schemas for AI Trading Analyst
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB. The collection name is the
+lowercase of the class name (e.g., User -> "user").
 """
-
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List, Literal
+from datetime import datetime
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: EmailStr
+    name: Optional[str] = None
+    role: Literal['trader', 'admin'] = 'trader'
+    password: Optional[str] = Field(None, description="Plain for demo only; use hashing in production")
+    session_token: Optional[str] = None
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Trade(BaseModel):
+    user_id: str = Field(..., description="User identifier (stringified ObjectId)")
+    symbol: str
+    asset_type: Literal['stock', 'crypto'] = 'stock'
+    quantity: float
+    price: float
+    side: Literal['buy', 'sell']
+    timestamp: datetime
+    fees: Optional[float] = 0.0
+    notes: Optional[str] = None
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Insight(BaseModel):
+    user_id: str
+    title: str
+    message: str
+    tags: List[str] = []
+    metrics: dict = {}
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+# Expose schemas to the UI/inspector
+class SchemaInfo(BaseModel):
+    name: str
+    fields: dict
+
